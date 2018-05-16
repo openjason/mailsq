@@ -1,25 +1,61 @@
-import urllib.parse
-import http.client
+import httplib, urllib, hashlib
+from lxml import etree
 
-httpClient = None
+class TosAPI:
+    def __init__(self, **kwargs):
+        self.app_name = kwargs.get('app_name')
+        self.pass_key = kwargs.get('pass_key')
 
-params = urllib.parse.urlencode({'mobileCode': '13825632612', 'userID': '5'})
+    def getFirstArrivalToStop(self, **kwargs):
+        #server_method, location, KS_ID
+       pass
 
-headers = {'Content-type': 'application/x-www-form-urlencoded', 'Accept': 'text/plain'}
-headers = {"Content-type": "text/html; charset=utf-8"}
-httpClient = http.client.HTTPConnection('www.webxml.com.cn', 80, timeout=10)
+    def getRouteArrivalToStop(self, **kwargs):
+        #server_method, location, kr_id, ks_id
+        pass
 
-httpClient.request('POST', '/WebServices/MobileCodeWS.asmx', params, headers)
+    def getRouteSchedule(self, **kwargs):
+        #server_method, location, kr_id
+        pass
 
-response = httpClient.getresponse()
+    def getTransportPosition(self, **kwargs):
+        #server_method, location, hullNo
+        server_method = kwargs.get('server_method', 'get')
+        location = kwargs.get('location', 'json')
+        if server_method == 'post':
+            if location == 'json':
+                return self.serverRequest(server_method, location, {'method' : 'getTransportPosition', 'hullNo':kwargs.get('HULLNO', 0)})
+            else:
+                requestXml = etree.Element('request')
+                tempXml = etree.Element('method')
+                tempXml.text = 'getTransportPosition'
+                requestXml.append(tempXml)
+                tempXml = etree.Element('HULLNO')
+                tempXml.text = kwargs.get('HULLNO', 0)
+                requestXml.append(tempXml)
+                return self.serverRequest(server_method, location, etree.tostring(requestXml))
+        pass
 
-print(response.status)
-print (response.reason)
+    def findShortestPath(self, **kwargs):
+        #???
+        pass
 
-print (response.read().decode('utf-8'))
+    def serverRequest(self, server_method, location, request):
+        request=str(request)
+        signature = hashlib.sha1(request+self.pass_key).hexdigest()
+        headers = {"Content-type": "application/x-www-form-urlencoded", "User-Agent":"samis"}
+        print request
+        print location
+        if server_method == 'post':
+            full_request = {'message':request, 'os':'testing', 'clientId':self.app_name, 'authKey':self.pass_key}
+            conn = httplib.HTTPConnection("localhost")
+            conn.request("POST", "/newapi/%s"% location, urllib.urlencode(full_request), headers)
+            response = conn.getresponse()
+            data = response.read()
+            print data
+            conn.close()
+        else:
+            pass
+RequestExample= TosAPI(app_name='samis', pass_key='1')
 
-print (response.getheaders())
-
-
-if httpClient:
-    httpClient.close()
+print RequestExample.getTransportPosition(server_method='post', location='json', HULLNO='349081')
