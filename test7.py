@@ -2,6 +2,7 @@ import urllib.request
 
 def InvokeWebservice(phone,msg):
     texturl='http://www.webxml.com.cn/WebServices/MobileCodeWS.asmx?'
+    texturl='http://127.0.0.1:8080'
     postcontent='<?xml version="1.0" encoding="utf-8"?>'
     postcontent+='<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">'
     postcontent+='<soap:Body>'
