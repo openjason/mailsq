@@ -13,12 +13,6 @@
 """Pythonic simple SOAP Server implementation"""
 
 
-from __future__ import unicode_literals
-import sys
-if sys.version > '3':
-    unicode = str
-
-
 import datetime
 import sys
 import logging
@@ -26,14 +20,13 @@ import warnings
 import re
 import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
-
-
 from simplexml import SimpleXMLElement, TYPE_MAP, Date, Decimal
 
 import logging.handlers
 
+unicode = str
 LOG_FILE = 'ms.log'
-LOC_ARG = ''
+globel_methon = ''
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5)  # 实例化handler
 fmt = '%(asctime)s - %(filename)s:%(lineno)s - %(name)s - %(message)s'
 
@@ -124,13 +117,13 @@ class SoapDispatcher(object):
 
         try:
             request = xml#SimpleXMLElement(xml, namespace=self.namespace)
-            global LOC_ARG
-            print("Call from :", LOC_ARG)
-            log.debug('catch by arg,dispatch method: %s', LOC_ARG)
+            global globel_methon
+#            print("Call from :", globel_methon)
+            log.debug('catch by arg,dispatch method: %s', globel_methon)
             print("jt1xml:",xml)
-            if LOC_ARG[0] == 'Queryemsmail':
+            if globel_methon[0] == 'Queryemsmail':
                 print("run ems")
-            elif LOC_ARG[0] == 'Queryrfdmail':
+            elif globel_methon[0] == 'Queryrfdmail':
                 print("run rfd")
             else:
                 raise Exception
@@ -414,8 +407,8 @@ class SOAPHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         """SOAP POST gateway"""
-        global LOC_ARG
-        LOC_ARG = self.path[1:].split("?")
+        global globel_methon
+        globel_methon = self.path[1:].split("?")
         request = self.rfile.read(int(self.headers.get('content-length')))
         # convert xml request to unicode (according to request headers)
 
