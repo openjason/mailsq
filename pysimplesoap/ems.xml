@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<listexpressmail>
+  <expressmail>
+	<serialnumber>00000000000000000001</serialnumber>
+    <mailnum>LK434266003CN</mailnum>
+    <procdate>20130702</procdate>
+    <proctime>000100</proctime>
+    <orgfullname>所在地名称</orgfullname>
+    <action>00</action>
+<description>描述信息</description>
+<effect>0</effect>
+<properdelivery>12</properdelivery>
+<notproperdelivery>123</notproperdelivery>
+  </expressmail>
+</listexpressmail>

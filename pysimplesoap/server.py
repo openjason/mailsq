@@ -1,16 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by the
-# Free Software Foundation; either version 3, or (at your option) any later
-# version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# for more details.
-
-"""Pythonic simple SOAP Server implementation"""
 
 import datetime
 import sys
@@ -18,10 +7,13 @@ import logging
 import warnings
 import re
 import traceback
+import logging.handlers
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from simplexml import SimpleXMLElement, TYPE_MAP, Date, Decimal
+from xmlet import emsxmlproc
+from writetodb import emstodb
+import pymysql.cursors
 
-import logging.handlers
 
 unicode = str
 LOG_FILE = 'ms.log'
@@ -124,39 +116,18 @@ class SoapDispatcher(object):
             else:
                 print("jr1:Can not match method")
                 raise Exception
+            #soap_fault_code = 'Server'
 
+            ems_xml_str = emsxmlproc(request)
+            global connection
+            emstodb(connection, ems_xml_str)
 
-
-#            function, returns_types, args_types, doc = self.methods[name]
-#            log.debug('returns_types %s', returns_types)
-
-            # de-serialize parameters (if type definitions given)
-#            if args_types:
-#                args = method.children().unmarshall(args_types)
-#            elif args_types is None:
-#                args = {'request': method}  # send raw request
-#            else:
-#                args = {}  # no parameters
-
-            soap_fault_code = 'Server'
-            # execute function
-#            ret = function(**args)
-#            log.debug('dispathed method returns: %s', ret)
-
-        # except SoapFault as e:
-        #     fault.update({
-        #         'faultcode': "%s.%s" % (soap_fault_code, e.faultcode),
-        #         'faultstring': e.faultstring,
-        #         'detail': e.detail
-        #     })
-
-
-            xml='''<response>
-	<onceKey>bffc0048854d711812662a5c57cc8e19</onceKey>
-<isSuccess>1</isSuccess>
-<resultCode>06</resultCode>
-</response>
-        '''
+            xml='''<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<success>0</success>
+<failmailnums></failmailnums>
+<remark></remark>
+</response>'''
         except Exception:  # This shouldn't be one huge try/except
             xml='<response>Request methon error...</response>'
         xml = SoapDispatcher._extra_namespaces(xml,{})
@@ -476,6 +447,14 @@ if __name__ == "__main__":
         documentation='EPMailProcSystem',
         trace=True, debug=True,
         ns=True)
+    global connection
+    connection = pymysql.connect(host='1.1.1.64',
+                                 user='mailer',
+                                 password='Admin@007',
+                                 db='ems',
+                                 charset='utf8mb4',
+                                 cursorclass=pymysql.cursors.DictCursor)
+
 
     def adder(p, c, dt=None):
         """Add several values"""
@@ -531,55 +510,4 @@ if __name__ == "__main__":
     httpd.dispatcher = dispatcher
     httpd.serve_forever()
 
-'''
-    if '--local' in sys.argv:
-
-        wsdl = dispatcher.wsdl()
-
-        for method, doc in dispatcher.list_methods():
-            request, response, doc = dispatcher.help(method)
-
-    if '--serve' in sys.argv:
-        log.info("Starting server...")
-        httpd = HTTPServer(("", 8008), SOAPHandler)
-        httpd.dispatcher = dispatcher
-        httpd.serve_forever()
-
-    if '--wsgi-serve' in sys.argv:
-        log.info("Starting wsgi server...")
-        from wsgiref.simple_server import make_server
-        application = WSGISOAPHandler(dispatcher)
-        wsgid = make_server('', 8008, application)
-        wsgid.serve_forever()
-
-    if '--consume' in sys.argv:
-        from .client import SoapClient
-        client = SoapClient(
-            location="http://localhost:8008/",
-            action='http://localhost:8008/',  # SOAPAction
-            namespace="http://example.com/sample.wsdl",
-            soap_ns='soap',
-            trace=True,
-            ns="ns0",
-        )
-        p = {'a': 1, 'b': 2}
-        c = [{'d': '1.20'}, {'d': '2.01'}]
-        response = client.Adder(p=p, dt='2010-07-24', c=c)
-        result = response.AddResult
-        log.info(int(result.ab))
-        log.info(str(result.dd))
-        
-    if '--consume-wsdl' in sys.argv:
-        from .client import SoapClient
-        client = SoapClient(
-            wsdl="http://localhost:8008/",
-        )
-        p = {'a': 1, 'b': 2}
-        c = [{'d': '1.20'}, {'d': '2.01'}]
-        dt = datetime.date.today()
-        response = client.Adder(p=p, dt=dt, c=c)
-        result = response['AddResult']
-        log.info(int(result['ab']))
-        log.info(str(result['dd']))
-
-'''
+    connection.close()
