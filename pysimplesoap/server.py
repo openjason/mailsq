@@ -12,7 +12,6 @@
 
 """Pythonic simple SOAP Server implementation"""
 
-
 import datetime
 import sys
 import logging
@@ -26,7 +25,7 @@ import logging.handlers
 
 unicode = str
 LOG_FILE = 'ms.log'
-globel_methon = ''
+
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5)  # 实例化handler
 fmt = '%(asctime)s - %(filename)s:%(lineno)s - %(name)s - %(message)s'
 
@@ -78,7 +77,6 @@ class SoapDispatcher(object):
         self.namespaces = namespaces
         self.pretty = pretty
         self.debug = debug
-        self.tempmethod = None
 
 
     @staticmethod
@@ -99,7 +97,7 @@ class SoapDispatcher(object):
     def response_element_name(self, method):
         return '%sRes3ponse' % method
 
-    def dispatch(self, xml, action=None, fault=None):
+    def dispatch(self, xml, action=None, fault=None, method = None):
         """Receive and process SOAP call, returns the xml"""
         # a dict can be sent in fault to expose it to the caller
         # default values:
@@ -117,15 +115,14 @@ class SoapDispatcher(object):
 
         try:
             request = xml#SimpleXMLElement(xml, namespace=self.namespace)
-            global globel_methon
-#            print("Call from :", globel_methon)
-            log.debug('catch by arg,dispatch method: %s', globel_methon)
+            log.debug('catch by arg,dispatch method: %s', method)
             print("jt1xml:",xml)
-            if globel_methon[0] == 'Queryemsmail':
+            if method == 'Queryemsmail':
                 print("run ems")
-            elif globel_methon[0] == 'Queryrfdmail':
+            elif method == 'Queryrfdmail':
                 print("run rfd")
             else:
+                print("jr1:Can not match method")
                 raise Exception
 
 
@@ -227,7 +224,6 @@ class SoapDispatcher(object):
         """Generate sample request and response messages"""
         (function, returns, args, doc) = self.methods[method]
 #add line
-        self.tempmethod = method
         xml = """
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
 <soap:Body><%(method)s xmlns="%(namespace)s"/></soap:Body>
@@ -407,8 +403,7 @@ class SOAPHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         """SOAP POST gateway"""
-        global globel_methon
-        globel_methon = self.path[1:].split("?")
+        args = self.path[1:].split("?")
         request = self.rfile.read(int(self.headers.get('content-length')))
         # convert xml request to unicode (according to request headers)
 
@@ -416,7 +411,7 @@ class SOAPHandler(BaseHTTPRequestHandler):
         request = request.decode(encoding)
         fault = {}
         # execute the method
-        response = self.server.dispatcher.dispatch(request, fault=fault)
+        response = self.server.dispatcher.dispatch(request, fault=fault, method = args[0])
         # check if fault dict was completed (faultcode, faultstring, detail)
         if fault:
             self.send_response(500)

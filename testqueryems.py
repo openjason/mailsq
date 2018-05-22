@@ -1,8 +1,8 @@
-import urllib.request
+﻿import urllib.request
 
 def InvokeWebservice(phone,msg):
     texturl = 'http://192.168.18.101:8008/Queryemsmail?wsdl'
-    texturl='http://localhost:8008/Queryemsmail'
+    texturl='http://localhost:8008/Queryemsmail?wsdl'
 
     print("website:",texturl)
     postcontent='''<?xml version="1.0" encoding="utf-8"?>
