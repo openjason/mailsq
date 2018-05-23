@@ -1,0 +1,303 @@
+
+
+
+
+
+
+
+
+快递查询平台
+项目需求说明书
+　　
+　　
+　　
+　　
+　　
+　　
+　　
+　　
+　　
+　　
+　　
+　　
+　　
+项目名称客户A快递查询平台文 件 名项目需求说明书文件编号[项目编号]文件状态草稿/正式发布(<V1.0>)撰 写 人审 核 人发布日期2018年05月21日　　
+
+
+修订历史记录
+
+　　　　　									      A - 增加  M - 修订  D - 删除
+版本号日期修改人摘          要V1.02018-5-14客户A快递邮寄查询项目需求初始版本
+
+
+目　　录
+
+1 客户业务及需求相关术语	4
+1.1 客户业务相关术语	5
+业务：	5
+1.1.1 快递反馈接口报文	5
+1.1.2 客户A接口设计	8
+1.2 技术术语	14
+2 项目目标	14
+3 客户限制	14
+4 客户联系	14
+5 业务框图	14
+6 人机界面要求	15
+
+　　
+
+1   客户业务及需求相关术语
+　　本节内容主要说明客户相关的业务相关的用语，以便在后续的项目推进中双方形成共同语言。
+　　
+　　我司与快递的反馈接口：
+> 接口说明：快递公司主动发起请求把邮件的收寄、投递、封发、开拆等信息推送到客户方，我司需要提供一个接口服务。
+> 采用技术：Http请求
+> 方式：POST
+> 请求服务地址：由我司提供
+> 请求的授权信息：
+下面数据项要设置到Http的Head上面
+1. 授权信息	authenticate=由客户方提供授权码、version=速递服务的版本号 (授权码是指客户跟速递双方约定好的一个接口授权密钥)
+2. 接口的数据格式Content-Type=text/xml; 或者Content-Type=text/json;此格式表明本次反馈所使用的数据格式，该格式可以根据用户的不同需要来进行配置。
+> 反馈加密处理需知（客户如果需要反馈加密报文则进行加密,加密流程通过邮件来确定加密方式）
+　　
+　　
+　　我司与客户A的相关接口：
+　1、推送快递单号接口说明
+默认为每5分钟（可参数配置）将有更新的快递单号全部进行推送，每笔推送消息报文最多包含50笔（可参数配置）快递单号，如超过50笔则拆分为多次推送请求推送过来（无需再等待5分钟）。
+每次请求中同一配送商的快递单号不能重复。
+接口响应时间限制为1分钟，超时的订单将进行重新推送。
+　
+　2、查询物流详情接口说明
+每次可查询同一配送商同一订单号下的一条或多条状态信息。
+接口响应时间限制为1分钟，超时则进行下一次请求。
+请求报文中logId（日志ID）为0时表示请求该订单所有状态日志。否则表示请求该条日志ID之后（不含此ID号）的所有订单状态日志。
+　
+
+1.1   客户业务相关术语
+业务：
+1.1.1   快递反馈接口报文
+反馈的数据报文如下：
+
+Xml反馈报文格式
+<?xml version="1.0" encoding="UTF-8"?>
+<listexpressmail>
+  <expressmail>
+	<serialnumber>00000000000000000001</serialnumber>
+    <mailnum>LK434266003CN</mailnum>
+    <procdate>20130702</procdate>
+    <proctime>000100</proctime>
+    <orgfullname>所在地名称</orgfullname>
+    <action>00</action>
+　　<description>描述信息</description>
+　　<effect>有效、无效</effect>
+　　<properdelivery>妥投使用</properdelivery>
+　　<notproperdelivery>未妥投使用</notproperdelivery>
+  </expressmail>
+</listexpressmail>
+Json反馈报文格式：
+{"listexpressmail": [
+  {
+	"serialnumber":"00000000000000000001",
+    "mailnum": "LK434266003CN",
+    "procdate": "20130702",
+    "proctime": "000100",
+    "orgfullname": "所在地名称",
+    "action": "00",
+　　"description": "描述信息",
+　　"effect":"",
+　　"properdelivery":"",
+　　"notproperdelivery":""
+  }
+]}
+
+服务端的响应报文：
+Xml:
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+	<success>0</success>
+	<failmailnums></failmailnums>
+	<remark></remark>
+</response>
+
+Json:
+{
+　　"response": {
+		"success":0,
+        "failmailnums":"",
+        "remark": "备注信息"
+    }
+}
+
+数据项说明
+
+字段属性字段说明说明serialnumber长度为20位数字状态的顺序号该字段表示着该条状态产生的顺序，没有实际意义 mailnum字符串长度13位邮件号码procdate日期 YYYYMMDDproctime时间 HHMMSSorgfullname长度不能超过256个字节所在地名称action业务动作00：收寄、10：妥投、20: 未妥投、30：经转过程中、40：离开处理中心、41：到达处理中心、50安排投递、51：正在投递、60：揽收properdelivery妥投只有当action=10时该字段才有值，参见附录中签收情况代码表notproperdelivery未妥投只有当action=20的时候该字段才有值，参见附录中未妥投原因代码表description长度不能超过512个字节描述effect有效无效0：表示无效(表示该邮件当前这个状态标识为无效的状态，判断依据邮件号、日期、时间、动作)，1：表示有效
+字段属性说明success0:表示失败，失败的时候failmailnums保存的是失败的邮件号，1：表示成功failmailnums如果success=0，该字段保存的是失败的邮件号，考虑到后面的批量反馈，可以使用英文的逗号分隔失败的邮件号remark备注信息
+ 
+注：
+	1.建议使用接口的时候尽量的把数据接下来不要直接处理，处理报文放在单独的线程里面去做，避免会影响反馈的速度。
+	2.考虑到后期的一个批量邮件的反馈xml报文里面的expressmail节点可以是多个，每个代表这一个邮件状态的反馈
+	3.考虑到反馈失败的情况，如果接口处理失败稍等重新反馈，如果失败次数达到10次就证明该条报文存在问题，落成文件以供后面处理
+快递接口附录：
+签收情况代码表转换
+签收情况代码签收情况名称签收情况代码10本人收1011他人收1112单位收发章1213未出口退回妥投1314退回妥投14
+未妥投原因代码表
+编号中文描述100正在投递中101收件人名址有误102查无此人103收件人不在指定地址104拒收退回105收件人要求延迟投递106误投107邮件错发108收到时破损，无法投出109禁寄物品110限寄物品111待收费后112无人认领113无法找到收件人114因不可抗力原因，邮件未投出115收件人要求自取116法定假日，无法投递117邮件丢失118人已他往119收件人有信箱120安排投递121正在投递122查无此单位123地址不祥，无电话，电话不对124地址不详125撤回126迁移新址不明127逾期未领128投递到包裹站129逾期投递员收回130其它
+1.1.2   客户A接口设计
+1.1.2.1   安全机制
+　　签名生成规则：对（请求报文+密钥）进行SHA-256加密
+　　测试密钥：123456
+　　正式密钥：由双方分别提供
+　　服务接口实行白名单机制，未授权的IP地址访问将直接拒绝服务。
+1.1.2.2   推送快递单号接口
+* 接口地址
+测试环境： 由客户A提供
+正式环境： 由客户A提供
+Post提交参数
+　　请求报文 ：requestxml  
+　　签名	 ：sign
+* 接口说明
+默认为每5分钟（可参数配置）将有更新的快递单号全部进行推送，每笔推送消息报文最多包含50笔（可参数配置）快递单号，如超过50笔则拆分为多次推送请求推送过来（无需再等待5分钟）。
+每次请求中同一配送商的快递单号不能重复。
+接口响应时间限制为1分钟，超时的订单将进行重新推送。
+* 请求报文定义
+模型类型　　　　　　　　　　　　　　request参数名称类型是否为空说明长度　　onceKey字符串否　　请求标识　　32　　　　requestModels　　　　requestModel　　orderNo　　字符串　　否　　快递单号　　50　　distributorCode　　字符串　　否　　配送商编码　　20
+* 请求报文示例
+<request>
+  <onceKey>74e9a9a520589e5db9ef41d404a3dc94</onceKey>
+　<requestModels>
+　<requestModel>
+		<orderNo>20141115001</orderNo>
+		<distributorCode>rfd</distributorCode>
+	</requestModel>
+　<requestModel>
+		<orderNo>20141115002</orderNo>
+		<distributorCode>rfd</distributorCode>
+　</requestModel>
+　</requestModels>
+</request>
+* 响应报文定义
+模型类型                           response参数名称类型是否为空说明长度　　onceKey　　字符串　　否　　响应标识　　32　　isSuccess　　整型　　否　　成功标识
+　　成功：0
+　　失败：1　　1　　resultCode　　字符串　　否　　结果编码
+　　附录2　　10　　                           responseModels　　                           responseModel　　distributorCode　　字符串　　否　　配送商编号　　20　　orderNo　　字符串　　否　　快递单号　　50
+* 成功响应报文示例
+<response>
+	<onceKey>bffc0048854d711812662a5c57cc8e19</onceKey>
+　　<isSuccess>0</isSuccess>
+　　<resultCode>01</resultCode>
+　　<responseModels>
+　　<responseModel>
+		<distributorCode>rfd</distributorCode>
+		
+		<orderNo>20141115001</orderNo>
+　　</responseModel>
+　　<responseModel>
+		<distributorCode>rfd</distributorCode>
+				<orderNo>20141115002</orderNo>
+　　</responseModel>
+　　</responseModels>
+　　</response>
+* 失败响应报文示例
+<response>
+	<onceKey>bffc0048854d711812662a5c57cc8e19</onceKey>
+　　<isSuccess>1</isSuccess>
+　　<resultCode>06</resultCode>
+　　</response>
+1.1.2.3   查询物流详情接口
+* 接口地址
+测试环境： http://***/api/ZX/GetOrderLog
+正式环境： http://***/api/ZX/GetOrderLog
+Post提交参数
+　　请求报文：requestxml  
+　　签名	 ：sign
+* 接口说明
+每次可查询同一配送商同一订单号下的一条或多条状态信息。
+接口响应时间限制为1分钟，超时则进行下一次请求。
+请求报文中logId（日志ID）为0时表示请求该订单所有状态日志。否则表示请求该条日志ID之后（不含此ID号）的所有订单状态日志。
+* 请求报文定义
+模型类型　　　　　　　　　　　　　　request参数名称类型是否为空说明长度　　onceKey字符串　　否　　请求标识　　32　　　　　　　　　　　　　　　　requestModel　　distributorCode　　字符串　　否　　配送商编码　　20　　orderNo　　字符串　　否　　快递单号　　50　　logId　　字符串　　否　　日志ID　　50
+* 请求报文示例
+
+<request>
+	<onceKey>3eef7836aac024fdf699f88ab6414a1d</onceKey>
+　　<requestModel>
+		<distributorCode>rfd</distributorCode>
+　　<orderNo>20141115001</orderNo>
+		<logId>440462</logId>
+　　</requestModel>
+　　</request>
+* 响应报文定义
+模型类型　　　　　　　　　　　　　response参数名称类型是否为空说明长度　　onceKey　　字符串否响应标识　　32　　isSuccess　　整型　　否　　成功标识
+　　成功：0
+　　失败：1　　1　　resultCode　　字符串　　否　　结果编码
+　　附录2　　10　　　　　　　　　　　　　　　responseModels　　　　　　　　　　　　　　　responseModel　　distributorCode　　字符串　　否　　配送商编号　　20　　logId　　字符串　　否　　日志ID　　50　　waybillNo　　字符串　　否　　运单号　　50　　orderNo　　字符串　　否　　快递单号　　50　　operateTime　　字符串　　否　　操作时间　　50　　operateLog　　字符串　　否　　操作日志　　500　　status　　整型　　否　　订单状态　　10
+* 成功响应报文示例
+<response>
+	<onceKey>b362b017614cae41be77a2035ef99da1</onceKey>
+	<isSuccess>0</isSuccess>
+	<resultCode>01</resultCode>
+　　<responseModels>
+　　<responseModel>
+		<distributorCode>rfd</distributorCode>
+		<logId>440462</logId>
+		<waybillNo> 9140725075042 </waybillNo>
+		<orderNo>20141115001</orderNo>		
+		<operateTime>2014/11/15 18:05:40</operateTime>
+		<operateLog>已送达成功</operateLog>
+		<status>3</status>
+　　</responseModel>
+　　<responseModel>
+		<distributorCode>rfd</distributorCode>
+　　	<logId>440462</logId>
+		<waybillNo> 9140725035040 </waybillNo>
+		<orderNo>20141115002</orderNo>
+		<operateTime>2014/11/15 18:05:40</operateTime>
+		<operateLog>
+			运单已由XXX送出，联系电话：XXX
+　　</operateLog>
+		<status>2</status>
+　　</responseModel>
+　　</responseModels>
+</response>
+
+* 失败响应报文示例
+<response>
+	<onceKey>b362b017614cae41be77a2035ef99da1</onceKey>
+　　<isSuccess>1</isSuccess>
+　　<resultCode>03<resultCode>
+　　</response>
+
+ 客户A接口附录
+附录1  状态编码
+编码描述-1已分拣10已出库1已入站2已分配3妥投4滞留5拒收
+附录2  结果编码
+编码描述01成功02日志ID或者订单号不存在03查询订单数量超过20条04接口内部异常05签名验证失败06非白名单IP
+　　
+1.2   技术术语
+　　主要描述文档中具有特别定义的名词、缩写等
+缩写、术语解 释…　　
+2   项目目标
+　　本项目所期望解决的问题，客户希望达到的目标。
+　　1、客户要求我司能支持7*24小时服务（快递单号推送、快递单号查询服务）；
+　　2、快递物流信息保留1个月后自动删除；
+　　3、为防止数据库异常崩溃，采用双机热备的数据备份策略；
+　　4、若邮寄平台挂掉，恢复服务时间不超过24小时（节假日除外）；
+　　5、若邮寄平台挂掉，数据丢失不能恢复，需及时报备客户方协调快递公司重新推送快递报文。
+3   客户限制
+　　客户提出的一些限制性要求及客户的考虑（原因）。
+　　暂无
+4   业务框图
+　　描述本项目涉及的业务及细分。
+　　
+　　
+1、 快递公司通过邮件反馈接口7*24小时实时回传数据报文；
+2、 我司接收快递公司的报文成功后，提取物流单号（不重复）批量推送给客户A，并对快递公司提供的每条快递单号报文内容进行去重、筛选管理；
+（去重规则：快递报文中“邮件号码”+“日期”+“时间”一致的快递报文第一次推送成功后，无需重复推送）
+3、 待客户A发起快递单号查询请求时，我司给出对应物流单号的物流状态响应。
+　　
+5   人机界面要求
+　　客户方无明确要求
+　
+　　
+第 9 页 共 15 页
+

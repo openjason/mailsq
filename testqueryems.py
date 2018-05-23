@@ -21,13 +21,13 @@ def InvokeWebservice(snumber,mailnum):
 </expressmail>
 </listexpressmail>
 ''' % {'snumber': snumber, 'mailnum': mailnum}
-    req=urllib.request.Request(texturl,data=postcontent.encode('utf-8'),headers={'Content-Type': 'text/xml'})
+    req=urllib.request.Request(texturl,data=postcontent.encode('utf-8'),headers={'Content-Type': 'text/xml','authenticate':'sqm123456sqm','version':'version523'})
     respRaw = urllib.request.urlopen(req)
     print(respRaw.read().decode('utf-8'))
 
 mailnum = 522000000
 
-for i in range(600):
+for i in range(1):
     mailnum = mailnum +1
     InvokeWebservice(str(i),str(mailnum))
     print (i)

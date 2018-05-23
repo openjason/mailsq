@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#author: jason chan
 
 import datetime
 import sys
@@ -16,10 +17,10 @@ import pymysql.cursors
 
 
 unicode = str
-LOG_FILE = 'ms.log'
-
+LOG_FILE = 'msq.log'
+VERSION = 'ep0.05231604'
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5)  # 实例化handler
-fmt = '%(asctime)s - %(filename)s:%(lineno)s - %(name)s - %(message)s'
+fmt = '%(asctime)s - %(filename)s:%(lineno)s - %(message)s'
 
 formatter = logging.Formatter(fmt)  # 实例化formatter
 handler.setFormatter(formatter)  # 为handler添加formatter
@@ -34,10 +35,10 @@ log.setLevel(logging.DEBUG)
 # Deprecated?
 NS_RX = re.compile(r'xmlns:(\w+)="(.+?)"')
 
-__author__ = "Mariano Reingart (reingart@gmail.com)"
-__copyright__ = "Copyright (C) 2008-2011 Mariano Reingart"
-__license__ = "GPL 3.0"
-__version__ = "2.08a"
+__author__ = "jc"
+__copyright__ = "ep"
+__license__ = "none"
+__version__ = "1.04a"
 
 class SoapFault(Exception):
     def __init__(self, faultcode=None, faultstring=None, detail=None):
@@ -107,27 +108,33 @@ class SoapDispatcher(object):
 
         try:
             request = xml#SimpleXMLElement(xml, namespace=self.namespace)
-            log.debug('catch by arg,dispatch method: %s', method)
-            print("jt1xml:",xml)
+            log.debug('dispatch method: %s', method)
+#            print("jt1xml:",xml)
             if method == 'Queryemsmail':
                 print("run ems")
-            elif method == 'Queryrfdmail':
-                print("run rfd")
-            else:
-                print("jr1:Can not match method")
-                raise Exception
-            #soap_fault_code = 'Server'
-
-            ems_xml_str = emsxmlproc(request)
-            global connection
-            emstodb(connection, ems_xml_str)
-
-            xml='''<?xml version="1.0" encoding="UTF-8"?>
+                try:
+                    #ems xml request exchage to a list.
+                    ems_xml_str = emsxmlproc(request)
+                except:
+                    log.debug("ems xml processing error.")
+                    log.debug(request)
+                global connection
+                emstodb(connection, ems_xml_str)
+                xml = '''<?xml version="1.0" encoding="UTF-8"?>
 <response>
 <success>0</success>
 <failmailnums></failmailnums>
 <remark></remark>
 </response>'''
+            elif method == 'Queryrfdmail':
+                print("run rfd")
+                xml='''<?xml version="1.0" encoding="UTF-8"?><response>rfd None</response>'''
+
+            else:
+                print("jr1:Can not match method")
+                raise Exception
+            #soap_fault_code = 'Server'
+
         except Exception:  # This shouldn't be one huge try/except
             xml='<response>Request methon error...</response>'
         xml = SoapDispatcher._extra_namespaces(xml,{})
@@ -140,9 +147,6 @@ class SoapDispatcher(object):
         # and get {'model': u'mod', 'external': u'ext'}
 
         response = SimpleXMLElement(xml)#,namespace=self.namespace,namespaces_map=mapping,prefix=prefix)
-
-        # response['xmlns:xsi'] = "http://www.w3.org/2001/XMLSchema-instance"
-        # response['xmlns:xsd'] = "http://www.w3.org/2001/XMLSchema"
 
         body = response#.add_child("%s:Body" % soap_ns, ns=False)
 
@@ -242,7 +246,6 @@ class SoapDispatcher(object):
               xmlns:xsd="http://www.w3.org/2001/XMLSchema">
        </xsd:schema>
     </wsdl:types>
-
 </wsdl:definitions>
 """ % {'namespace': self.namespace, 'name': self.name, 'documentation': self.documentation}
         wsdl = SimpleXMLElement(xml)
@@ -388,6 +391,9 @@ class SOAPHandler(BaseHTTPRequestHandler):
             self.send_response(500)
         else:
             self.send_response(200)
+        if args[0] == 'Queryemsmail':
+            self.send_header("authenticate", "sqm123456sqm")
+            self.send_header("version", "version523")
         self.send_header("Content-type", "text/xml")
         self.end_headers()
         self.wfile.write(response)
@@ -438,7 +444,7 @@ class WSGISOAPHandler(object):
 
 
 if __name__ == "__main__":
-
+    print('Connecting db and starting server...')
     dispatcher = SoapDispatcher(
         name="EPSoap",
         location="http://localhost:8008/",
@@ -448,13 +454,16 @@ if __name__ == "__main__":
         trace=True, debug=True,
         ns=True)
     global connection
-    connection = pymysql.connect(host='1.1.1.64',
-                                 user='mailer',
-                                 password='Admin@007',
-                                 db='ems',
-                                 charset='utf8mb4',
-                                 cursorclass=pymysql.cursors.DictCursor)
-
+    try:
+        connection = pymysql.connect(host='1.1.1.64',
+                                     user='mailer',
+                                     password='test@007',
+                                     db='ems',
+                                     charset='utf8mb4',
+                                     cursorclass=pymysql.cursors.DictCursor)
+    except:
+        log.info('Can not connect to db, pls check mysql server or user.')
+        exit(2)
 
     def adder(p, c, dt=None):
         """Add several values"""
@@ -505,7 +514,7 @@ if __name__ == "__main__":
     )
     dispatcher.register_function('Echo', echo)
 
-    log.info("Starting server...")
+    log.info("Server is running...ver:"+VERSION)
     httpd = HTTPServer(("", 8008), SOAPHandler)
     httpd.dispatcher = dispatcher
     httpd.serve_forever()

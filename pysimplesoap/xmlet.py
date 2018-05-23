@@ -1,15 +1,13 @@
 #！usr/bin/python
 # -*- coding: utf-8 -*-
-#==========================
+#author: Jason chan
+
 import xml.etree.ElementTree as ET
 
-
-
 def emsxmlproc(emsxml):
-    # tree = ET.parse('ems.xml')
+    # tree = ET.parse('ems.xml') #process the xml file.
     # root = tree.getroot()
-    root = ET.fromstring(emsxml)
-
+    root = ET.fromstring(emsxml)        #directory process xml string.
     #print('root-tag:',root.tag,',root-attrib:',root.attrib,',root-text:',root.text)
     rstr = []
     for child in root:
@@ -39,6 +37,7 @@ def emsxmlproc(emsxml):
            elif sub.tag == 'notproperdelivery':
                 notproperdelivery = subtext
 
+#if var have none value,it append will raise exception.
     rstr.append(serialnumber)
     rstr.append(mailnum)
     rstr.append(procdate)
@@ -50,7 +49,6 @@ def emsxmlproc(emsxml):
     rstr.append(properdelivery)
     rstr.append(notproperdelivery)
     return rstr
-
 
 if __name__ == '__main__':
 

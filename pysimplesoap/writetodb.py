@@ -1,3 +1,4 @@
+#author:jason chan
 '''
 CREATE TABLE `maillist` (
 	`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -50,7 +51,7 @@ if __name__=="__main__":
     try:
         connection = pymysql.connect(host='1.1.1.64',
                                      user='mailer',
-                                     password='Admin@007',
+                                     password='test@007',
                                      db='ems',
                                      charset='utf8mb4',
                                      cursorclass=pymysql.cursors.DictCursor)

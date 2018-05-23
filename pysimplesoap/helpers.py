@@ -35,10 +35,10 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 
-__author__ = "Mariano Reingart (reingart@gmail.com)"
-__copyright__ = "Copyright (C) 2008-2011 Mariano Reingart"
-__license__ = "GPL 3.0"
-__version__ = "2.08a"
+__author__ = "jc"
+__copyright__ = "ep"
+__license__ = "none"
+__version__ = "1.04a"
 
 def fetch(url, http, cache=False, force_download=False, wsdl_basedir='', headers={}):
     """Download a document from a URL, save it locally if cache enabled"""

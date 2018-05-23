@@ -31,10 +31,10 @@ from helpers import TYPE_MAP, TYPE_MARSHAL_FN, TYPE_UNMARSHAL_FN, \
 
 log = logging.getLogger(__name__)
 
-__author__ = "Mariano Reingart (reingart@gmail.com)"
-__copyright__ = "Copyright (C) 2008-2011 Mariano Reingart"
-__license__ = "GPL 3.0"
-__version__ = "2.08a"
+__author__ = "jc"
+__copyright__ = "ep"
+__license__ = "none"
+__version__ = "1.04a"
 
 class SimpleXMLElement(object):
     """Simple XML manipulation (simil PHP)"""
