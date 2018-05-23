@@ -1,0 +1,25 @@
+<request>
+  <onceKey>74e9a9a520589e5db9ef41d404a3dc94</onceKey>
+　<requestModels>
+　<requestModel>
+		<orderNo>20141115001</orderNo>
+		<distributorCode>rfd</distributorCode>
+	</requestModel>
+　<requestModel>
+		<orderNo>20141115002</orderNo>
+		<distributorCode>rfd</distributorCode>
+　</requestModel>
+    　<requestModel>
+		<orderNo>20141115003</orderNo>
+		<distributorCode>rfd</distributorCode>
+　</requestModel>
+    　<requestModel>
+		<orderNo>20141115004</orderNo>
+		<distributorCode>rfd</distributorCode>
+　</requestModel>
+    　<requestModel>
+		<orderNo>20141115005</orderNo>
+		<distributorCode>rfd</distributorCode>
+　</requestModel>
+　</requestModels>
+</request>
