@@ -19,16 +19,31 @@ def InvokeWebservice(snumber,mailnum):
 <properdelivery> 22 </properdelivery>
 <notproperdelivery> 100 </notproperdelivery>
 </expressmail>
+<expressmail>
+<serialnumber> %(snumber)s </serialnumber>
+<mailnum> LK%(mailnum)sCN </mailnum>
+<procdate> 20130702 </procdate>
+<proctime> 60100 </proctime>
+<orgfullname> 所在地名称 </orgfullname>
+<action> 00 </action>
+<description> 描述信息 </description>
+<effect> 1</effect>
+<properdelivery> 22 </properdelivery>
+<notproperdelivery> 100 </notproperdelivery>
+</expressmail>
 </listexpressmail>
 ''' % {'snumber': snumber, 'mailnum': mailnum}
+
+    print(postcontent)
     req=urllib.request.Request(texturl,data=postcontent.encode('utf-8'),headers={'Content-Type': 'text/xml','authenticate':'sqm123456sqm','version':'version523'})
     respRaw = urllib.request.urlopen(req)
     print(respRaw.read().decode('utf-8'))
 
-mailnum = 522000000
+mailnum = 532000000
 
-for i in range(1):
-    mailnum = mailnum +1
-    InvokeWebservice(str(i),str(mailnum))
-    print (i)
-    print(mailnum)
+if __name__ == '__main__':
+    for i in range(1234,1235):
+        mailnum = mailnum +1
+        InvokeWebservice(str(i),str(mailnum))
+        print (i)
+        print(mailnum)

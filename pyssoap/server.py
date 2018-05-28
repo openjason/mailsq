@@ -119,12 +119,13 @@ class SoapDispatcher(object):
                 print("run ems")
                 try:
                     #ems xml request exchage to a list.
-                    ems_xml_str = emsxmlproc(request)
+                    ems_extract_list = emsxmlproc(request)
                 except:
                     log.debug("ems xml processing error.")
                     log.debug(request)
                 global connection
-                emstodb(connection, ems_xml_str)
+                for ems_single_list in ems_extract_list:
+                    emstodb(connection, ems_single_list)
                 xml = '''<?xml version="1.0" encoding="UTF-8"?>
 <response>
 <success>0</success>
@@ -133,7 +134,7 @@ class SoapDispatcher(object):
 </response>'''
             elif method == 'Queryrfdmail':
                 print("run rfd")
-                xml='''<?xml version="1.0" encoding="UTF-8"?><response>rfd None</response>'''
+                xml='''<?xml version="1.0" encoding="GBK"?><response>rfd None</response>'''
 
             else:
                 print("jr1:Can not match method")
