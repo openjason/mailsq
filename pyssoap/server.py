@@ -5,6 +5,17 @@
 # 系统在客户查询的时候返回最新的物流信息，也支持主动批量将物流信息发送给客户指定网络接口。
 # 系统处理数据量大，百万条记录以上，实时性要求高，要及时处理报文，以免影响报文的接收和发送。
 # 报文发送和接收有验证机制，接口地址判断，头信息，授权码等方式确认报文来源验证。
+#
+# 文本文件数据导入MYSQL：
+# load data local infile 'filename.txt' into table tablename(field1,field2,field3)
+# 如果文本数据用空格分开，硬回车结束，可不加下面的命令：
+#   FIELDS TERMINATED BY ':'
+#   LINES TERMINATED BY '\r\n';
+# mysqlimport客户端提供了LOAD DATA INFILE SQL语句的一个命令行接口。mysqlimport的大多数选项直接对应LOAD DATA INFILE子句。
+#
+# 一次插入多条数据，可用values后更多条值，用小括号包含每条数据，用逗号分开。
+# insert into normalcode(code,detail) values('11','本人收'),('12','单位收发章'),('13','未出口退回妥投'),('14','退回妥投')
+#
 #author: jason chan
 
 import datetime
@@ -17,13 +28,13 @@ import logging.handlers
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from simplexml import SimpleXMLElement, TYPE_MAP, Date, Decimal
 from xmlet import emsxmlproc
-from writetodb import emstodb
+from mysqldb import emstodb,emsquery
 import pymysql.cursors
 
 
 unicode = str
 LOG_FILE = 'msq.log'
-VERSION = 'ep0.05231604'
+VERSION = 'ep0.05290919'
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5)  # 实例化handler
 fmt = '%(asctime)s - %(filename)s:%(lineno)s - %(message)s'
 
@@ -115,7 +126,7 @@ class SoapDispatcher(object):
             request = xml#SimpleXMLElement(xml, namespace=self.namespace)
             log.debug('dispatch method: %s', method)
 #            print("jt1xml:",xml)
-            if method == 'Queryemsmail':
+            if method == 'rfromems':
                 print("run ems")
                 try:
                     #ems xml request exchage to a list.
@@ -132,6 +143,20 @@ class SoapDispatcher(object):
 <failmailnums></failmailnums>
 <remark></remark>
 </response>'''
+
+            elif method == 'emsquery':
+                print("run ems")
+                try:
+                    #ems xml request exchage to a list.
+                    ems_extract_list = emsxmlproc(request)
+                except:
+                    log.debug("ems xml processing error.")
+                    log.debug(request)
+                global connection
+                for ems_single_list in ems_extract_list:
+                    emstodb(connection, ems_single_list)
+                xml='''<?xml version="1.0" encoding="GBK"?><response>ems query</response>'''
+
             elif method == 'Queryrfdmail':
                 print("run rfd")
                 xml='''<?xml version="1.0" encoding="GBK"?><response>rfd None</response>'''
@@ -397,7 +422,7 @@ class SOAPHandler(BaseHTTPRequestHandler):
             self.send_response(500)
         else:
             self.send_response(200)
-        if args[0] == 'Queryemsmail':
+        if args[0] == 'rfromems':
             self.send_header("authenticate", "sqm123456sqm")
             self.send_header("version", "version523")
         self.send_header("Content-type", "text/xml")
@@ -464,7 +489,7 @@ if __name__ == "__main__":
         connection = pymysql.connect(host='1.1.1.64',
                                      user='mailer',
                                      password='test@007',
-                                     db='ems',
+                                     db='mailstore',
                                      charset='utf8mb4',
                                      cursorclass=pymysql.cursors.DictCursor)
     except:
@@ -486,7 +511,7 @@ if __name__ == "__main__":
         print("jt4:",distributorCode)
         return {'key':onceKey}
 
-    def queryemsmail(onceKey,distributorCode,logId):
+    def rf_ems(onceKey,distributorCode,logId):
         """Just return input"""
         print("jt3",onceKey)
         print("jt4:",distributorCode)
@@ -509,7 +534,7 @@ if __name__ == "__main__":
     )
 
     dispatcher.register_function(
-        'Queryemsmail', queryemsmail,
+        'rfromems', rfrom_ems,
         returns={'out0': str},
         args={'in0': str}
     )

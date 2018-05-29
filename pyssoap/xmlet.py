@@ -5,7 +5,7 @@
 import xml.etree.ElementTree as ET
 
 def emsxmlproc(emsxml):
-    # tree = ET.parse('ems.xml') #process the xml file.
+    # 格式化来自ems单详细信息，处理后将保存到数据库
     # root = tree.getroot()
     rstr_all = []
     root = ET.fromstring(emsxml)        #directory process xml string.
@@ -51,6 +51,50 @@ def emsxmlproc(emsxml):
         rstr_all.append(rstr_one)
     return rstr_all
 
+
+def emsqueryproc(emsxml):
+    # 格式化对ems的查询申请
+    rstr_all = []
+    root = ET.fromstring(emsxml)
+#    print('root-tag:',root.tag,',root-attrib:',root.attrib,',root-text:',root.text)
+    for child in root:
+        print('child-tag:', child.tag, ',child-attrib:', child.attrib, ',child-text:', child.text)
+        rstr_one = []
+        subtext = child.text
+        subtext = subtext.strip()
+        if child.tag == 'onceKey':
+            rstr_all.append(subtext)
+
+        for sub in child:
+            print('sub-tag:', sub.tag, ',sub-attrib:', sub.attrib, ',sub-text:', sub.text)
+            subtext = sub.text
+            subtext = subtext.strip()
+
+            if sub.tag == 'distributorCode' :
+                distributorCode = subtext
+            elif sub.tag == 'orderNo':
+                orderNo = subtext
+            elif sub.tag == 'logId':
+                logId = subtext
+
+        if child.tag == 'requestModel':
+            rstr_one.append(distributorCode)
+            rstr_one.append(orderNo)
+            rstr_one.append(logId)
+            rstr_all.append(rstr_one)
+
+
+#if var have none value,it append will raise exception.
+        # rstr_one.append(onceKey)
+        # rstr_one.append(distributorCode)
+        # rstr_one.append(orderNo)
+        # rstr_one.append(logId)
+        #
+        # rstr_all.append(rstr_one)
+    return rstr_all
+
+
+
 if __name__ == '__main__':
 
     emsxml = '''<?xml version="1.0" encoding="UTF-8"?>
@@ -93,4 +137,14 @@ if __name__ == '__main__':
   </expressmail>
 </listexpressmail>
 '''
-    print(emsxmlproc(emsxml))
+
+emsqueryxml = '''<request>
+<onceKey> 3eef7836aac024fdf699f88ab6414a1d </onceKey>
+<requestModel>
+<distributorCode > ems </distributorCode>
+<orderNo> 20141115001 </orderNo>
+<logId> 440462 </logId>
+</requestModel>
+</request>'''
+
+print(emsqueryproc(emsqueryxml))

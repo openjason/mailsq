@@ -18,5 +18,7 @@ def InvokeWebservice(phone,msg):
     respRaw = urllib.request.urlopen(req)
     print(respRaw.read().decode('GBK'))
 
-InvokeWebservice('1234','abcd')
 
+
+if __name__ == '__main__':
+    InvokeWebservice('1234', 'abcd')
