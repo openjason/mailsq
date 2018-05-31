@@ -27,14 +27,14 @@ import traceback
 import logging.handlers
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from simplexml import SimpleXMLElement, TYPE_MAP, Date, Decimal
-from xmlet import emsxmlproc
-from mysqldb import emstodb,emsquery
+from xmlet import xmlet_emsxmlproc,xmlet_emslist_to_xml,xmlet_emsqueryproc
+from mysqldb import mysql_emstodb,mysql_query_ems
 import pymysql.cursors
 
 
 unicode = str
 LOG_FILE = 'msq.log'
-VERSION = 'ep0.05290919'
+VERSION = 'ep0.05311045'
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5)  # 实例化handler
 fmt = '%(asctime)s - %(filename)s:%(lineno)s - %(message)s'
 
@@ -121,43 +121,59 @@ class SoapDispatcher(object):
         # namespaces = [('model', 'http://model.common.mt.moboperator'), ('external', 'http://external.mt.moboperator')]
         _ns_reversed = dict(((v, k) for k, v in self.namespaces.items()))  # Switch keys-values
         # _ns_reversed = {'http://external.mt.moboperator': 'external', 'http://model.common.mt.moboperator': 'model'}
-
+        global connection
         try:
             request = xml#SimpleXMLElement(xml, namespace=self.namespace)
             log.debug('dispatch method: %s', method)
 #            print("jt1xml:",xml)
             if method == 'rfromems':
-                print("run ems")
-                try:
+                print("run ems insert data")
                     #ems xml request exchage to a list.
-                    ems_extract_list = emsxmlproc(request)
-                except:
-                    log.debug("ems xml processing error.")
-                    log.debug(request)
-                global connection
-                for ems_single_list in ems_extract_list:
-                    emstodb(connection, ems_single_list)
-                xml = '''<?xml version="1.0" encoding="UTF-8"?>
+                ems_extract_list = xmlet_emsxmlproc(request)
+
+                if isinstance(ems_extract_list,list):
+                    for ems_single_list in ems_extract_list:
+                        mysql_emstodb(connection, ems_single_list)
+                    xml = '''<?xml version="1.0" encoding="UTF-8"?>
 <response>
 <success>0</success>
 <failmailnums></failmailnums>
 <remark></remark>
 </response>'''
-
-            elif method == 'emsquery':
-                print("run ems")
-                try:
-                    #ems xml request exchage to a list.
-                    ems_extract_list = emsxmlproc(request)
-                except:
+                else:
                     log.debug("ems xml processing error.")
                     log.debug(request)
-                global connection
-                for ems_single_list in ems_extract_list:
-                    emstodb(connection, ems_single_list)
-                xml='''<?xml version="1.0" encoding="GBK"?><response>ems query</response>'''
 
-            elif method == 'Queryrfdmail':
+            elif method == 'queryems':
+                print("run ems query")
+                ems_extract_list = xmlet_emsqueryproc(request)
+                if isinstance(ems_extract_list,list):
+                    if len(ems_extract_list) < 2:
+                        log.info("error ems_extract_list less than 2.")
+                    else:
+                        ems_onekey = ems_extract_list.pop(0)    #将 onekey 剥离，保留查询数据。
+                        #global connection
+                        for ems_single_list in ems_extract_list:
+                            if ems_single_list[0] == 'ems':
+                                emsqr_list = mysql_query_ems(connection, ems_single_list[1])
+                            else:
+                                log.error("error ems_extract_list[0] unknow")
+                                log.error(ems_single_list)
+                        if isinstance(emsqr_list,list):
+                            if len(emsqr_list) >0:
+                                xml=xmlet_emslist_to_xml(emsqr_list)
+                            else:
+                                log.error("error not found the mailnum: "+str(ems_single_list[1]))
+                                xml = '''<?xml version="1.0" encoding="GBK"?><response>errror ems query, No MailNum Found.</response>'''
+                        else:
+                            log.error("error emsqr_list not a list")
+                            log.error(emsqr_list)
+                else:
+                    log.debug("error ems query request processing error.")
+                    log.debug(request)
+
+
+            elif method == 'rfdquery':
                 print("run rfd")
                 xml='''<?xml version="1.0" encoding="GBK"?><response>rfd None</response>'''
 
@@ -166,8 +182,9 @@ class SoapDispatcher(object):
                 raise Exception
             #soap_fault_code = 'Server'
 
-        except Exception:  # This shouldn't be one huge try/except
-            xml='<response>Request methon error...</response>'
+        except Exception as e:  # This shouldn't be one huge try/except
+            logging.info ("error exception "+str(e))
+            xml='<response>Request methon error...Exception...</response>'
         xml = SoapDispatcher._extra_namespaces(xml,{})
 #        xml = SoapDispatcher._extra_namespaces(xml, _ns_reversed)
 
@@ -511,7 +528,7 @@ if __name__ == "__main__":
         print("jt4:",distributorCode)
         return {'key':onceKey}
 
-    def rf_ems(onceKey,distributorCode,logId):
+    def rfrom_ems(onceKey,distributorCode,logId):
         """Just return input"""
         print("jt3",onceKey)
         print("jt4:",distributorCode)

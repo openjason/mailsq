@@ -63,9 +63,12 @@ AUTO_INCREMENT=10752
 
 '''
 
+import logging
+log = logging.getLogger('tst')
+
 import pymysql.cursors
 
-def emstodb(connection,emsdict):
+def mysql_emstodb(connection,emsdict):
     # （已转换为列表形式）接收的ems报文插入到数据库
     serialnumber = emsdict[0]
     mailnum = emsdict[1]
@@ -82,11 +85,16 @@ def emstodb(connection,emsdict):
             sql = "insert into emslist (serialnumber,mailnum,procdate,proctime,orgfullname,action,properdelivery,notproperdelivery,description,effect) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             cursor.execute(sql, (serialnumber,mailnum,procdate,proctime,orgfullname,action,properdelivery,notproperdelivery,description,effect))
         connection.commit()
-    except:
+
+    except Exception as e:
+        log.error("error in mysql_query_ems" + str(e))
+        return "error in mysql_query_ems:" + str(e)
         # Rollback in case there is any error
         db.rollback()
+    return "write to db success."
 
-def query_ems(connection,ems_mail_num):
+
+def mysql_query_ems(connection,ems_mail_num):
     # （已转换为列表形式）接收的ems报文插入到数据库
     rstr_all = []
     try:
@@ -121,9 +129,9 @@ notproperdelivery,description,effect from emslist where mailnum='%s' order by pr
                 rstr_one.append(properdelivery)
                 rstr_one.append(notproperdelivery)
                 rstr_all.append(rstr_one)
-    except:
-        return "error in query ems mail record."
-#    print(rstr_all)
+    except Exception as e:
+        log.error("error in mysql_query_ems" + str(e))
+        return "error in mysql_query_ems:" + str(e)
     return rstr_all
 
 if __name__=="__main__":
@@ -160,10 +168,10 @@ if __name__=="__main__":
         #     emsdict.append(properdelivery)
         #     emsdict.append(notproperdelivery)
         #     print (emsdict)
-#            emstodb(connection,emsdict)
+#            mysql_emstodb(connection,emsdict)
 
 # test for query_ems_record.
-        ret = query_ems(connection,'LK542000001CN')
+        ret = mysql_query_ems(connection,'LK542000001CN')
         for r in ret:
             print(r)
 

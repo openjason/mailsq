@@ -1,7 +1,10 @@
 import urllib.request
 
+
+
+
 def emsquery(mailnum):
-    texturl='http://1.1.1.64:8008/emsquery?wsdl'
+    texturl='http://1.1.1.64:8008/queryems'
 #    texturl = 'http://192.168.18.101:8008/Queryrfdmail?wsdl'
     print("website:",texturl)
     postcontent='''<?xml version="1.0" encoding="utf-8"?>
@@ -21,4 +24,4 @@ def emsquery(mailnum):
 
 if __name__ == '__main__':
 #    InvokeWebservice('1234', 'abcd')
-    emsquery('LK542000001CN')
+    emsquery('LK142005002CN')

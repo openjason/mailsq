@@ -35,10 +35,10 @@ def InvokeWebservice(snumber,mailnum):
     respRaw = urllib.request.urlopen(req)
     print(respRaw.read().decode('utf-8'))
 
-mailnum = 542000000
+mailnum = 142005100
 
 if __name__ == '__main__':
-    for i in range(4234,4239):
+    for i in range(4257,4259):
         mailnum = mailnum +1
         InvokeWebservice(str(i),str(mailnum))
         print (i)
