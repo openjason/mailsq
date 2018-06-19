@@ -34,7 +34,7 @@ import pymysql.cursors
 
 unicode = str
 LOG_FILE = 'msq.log'
-VERSION = 'ep0.05311045'
+VERSION = 'ep0.06181653'
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5)  # 实例化handler
 fmt = '%(asctime)s - %(filename)s:%(lineno)s - %(message)s'
 
